@@ -1,0 +1,9 @@
+{
+  "name": "tilt-controller",
+  "version": "1.0.0",
+  "dependencies": {
+    "express": "^4.16.4",
+    "robotjs": "^0.5.1",
+    "wrtc": "^0.3.5"
+  }
+}

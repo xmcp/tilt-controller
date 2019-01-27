@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Tilt Controller</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <style>
+        textarea {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <textarea id="logger" disabled="disabled"></textarea>
+    <script>
+        let INTERVAL_TIME=16;
+        let logger=document.getElementById('logger');
+        function log(...t) {
+            logger.textContent+='\n'+JSON.stringify(t);
+        }
+
+        let conn=new RTCPeerConnection({iceServers: []});
+        let channel=conn.createDataChannel('data',{
+            maxRetransmits: 0,
+            ordered: false,
+            reliable: false,
+        });
+
+        let okay=false;
+        channel.onopen=(e)=>{
+            log('open',e);
+            okay=true;
+        };
+        channel.onclose=(e)=>{
+            log('close',e);
+            okay=false;
+        };
+
+        let touched=0;
+        document.addEventListener('touchstart',()=>{touched=1;},false);
+        document.addEventListener('touchend',()=>{touched=0;},false);
+
+        if(!DeviceOrientationEvent)
+            log('FAIL','no DeviceOrientationEvent');
+        else {
+            let last_timer=-9999999;
+            window.addEventListener('deviceorientation',(event)=>{
+                let cur_timer=performance.now();
+                if(cur_timer-last_timer<INTERVAL_TIME)
+                    return;
+
+                last_timer=cur_timer;
+                //log('deviceorientation',event);
+                if(okay) {
+                    channel.send(JSON.stringify([event.beta,event.gamma,touched]));
+                }
+            });
+        }
+
+        function gather_ice() {
+            return new Promise((resolve,reject)=>{
+                conn.onicecandidate=(e)=>{
+                    if(e.candidate)
+                        log('onicedandidate',e.candidate);
+                    else {
+                        log('onicedandidate','COMPLETED');
+                        log('return',conn.localDescription);
+                        resolve(conn.localDescription);
+                    }
+                };
+            });
+        }
+
+        log('start');
+        conn.createOffer()
+            .then((offer)=>conn.setLocalDescription(offer))
+            .then(gather_ice())
+            .then(()=>fetch('/handshake',{
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(conn.localDescription),
+            }))
+            .then((res)=>res.json())
+            .then((json)=>{
+                log('json',json);
+                return conn.setRemoteDescription(json);
+            })
+            .catch((e)=>log('catch',e));
+    </script>
+</body>
+</html>
