@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Tilt Controller</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <style>
+        textarea {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <textarea id="logger" disabled="disabled"></textarea>
+    <script src="rtc_core.js"></script>
+    <script>
+        start_channel('tilt');
+
+        let touched=0;
+        document.addEventListener('touchstart',()=>{touched=1;},false);
+        document.addEventListener('touchend',()=>{touched=0;},false);
+
+        if(!DeviceOrientationEvent)
+            log('FAIL','no DeviceOrientationEvent');
+        else {
+            window.addEventListener('deviceorientation',(event)=>{
+                send_data([event.beta,event.gamma,touched]);
+            });
+        }
+    </script>
+</body>
+</html>

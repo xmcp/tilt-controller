@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Tilt Controller</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <style>
+        textarea {
+            width: 100%;
+            height: 500px;
+        }
+        html { /* disable overscroll */
+            position: fixed;
+            overflow: hidden;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <textarea id="logger" disabled="disabled"></textarea>
+    <script src="rtc_core.js"></script>
+    <script>
+        start_channel('touch');
+
+        document.addEventListener('touchmove',(event)=>{
+            if(event.touches.length) {
+                let touch=event.touches.item(0);
+                if(touch.force>0) // apple pencil
+                    send_data([touch.screenX,touch.screenY,touch.force]);
+            }
+        });
+    </script>
+</body>
+</html>
